@@ -1,0 +1,1337 @@
+<title>Marwan Abudaif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+
+<style>
+/* ──────────────────────────────────────────────────────────────
+   SURVEY CHART — tokens. Dark is the default ground; light is the
+   paper-chart inversion. Every color is declared here first.
+   ────────────────────────────────────────────────────────────── */
+:root{
+  --ink:#0A1518;          /* bathymetric ground        */
+  --surface:#0F2126;      /* raised panel              */
+  --surface-2:#132A30;    /* inset / well              */
+  --rule:#1C3840;         /* hairline, contour, grid   */
+  --rule-soft:#152C33;
+  --text:#DCE7E4;
+  --text-dim:#93AAAF;
+  --text-faint:#638087;
+  --signal:#E8622C;       /* surveyor's vermilion      */
+  --signal-soft:#7A3318;
+  --hydro:#4FB3C4;        /* chart cyan                */
+  --hydro-soft:#1E4A55;
+  --good:#63A98C;
+  --warn:#D9A441;
+  --crit:#CE4C3D;
+  --shadow:0 1px 0 rgba(255,255,255,.03), 0 18px 40px -24px rgba(0,0,0,.8);
+
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --f-ar:"IBM Plex Sans Arabic","Geeza Pro",system-ui,sans-serif;
+
+  --rail:74px;
+  --maxw:1180px;
+  --gap:clamp(56px,7vw,104px);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --ink:#E9EEEA; --surface:#F4F7F3; --surface-2:#DFE7E1;
+    --rule:#C2D0CA; --rule-soft:#D6E0DA;
+    --text:#0E2024; --text-dim:#42575C; --text-faint:#7B8F92;
+    --signal:#C44A18; --signal-soft:#F0C6B2;
+    --hydro:#1F7686; --hydro-soft:#BDDCE2;
+    --good:#2F7A5C; --warn:#9A6B10; --crit:#A8362A;
+    --shadow:0 1px 0 rgba(255,255,255,.7), 0 18px 36px -26px rgba(14,32,36,.4);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --ink:#E9EEEA; --surface:#F4F7F3; --surface-2:#DFE7E1;
+  --rule:#C2D0CA; --rule-soft:#D6E0DA;
+  --text:#0E2024; --text-dim:#42575C; --text-faint:#7B8F92;
+  --signal:#C44A18; --signal-soft:#F0C6B2;
+  --hydro:#1F7686; --hydro-soft:#BDDCE2;
+  --good:#2F7A5C; --warn:#9A6B10; --crit:#A8362A;
+  --shadow:0 1px 0 rgba(255,255,255,.7), 0 18px 36px -26px rgba(14,32,36,.4);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ink); color:var(--text);
+  font-family:var(--f-body); font-size:17px; line-height:1.62;
+  font-weight:300; -webkit-font-smoothing:antialiased;
+  margin:0; overflow-x:hidden;
+}
+::selection{background:var(--signal); color:var(--ink)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--signal); outline-offset:3px; border-radius:2px}
+
+.skip{position:absolute;left:-9999px;top:0;z-index:99;background:var(--signal);color:#0A1518;padding:10px 16px;font-family:var(--f-mono);font-size:12px}
+.skip:focus{left:8px;top:8px}
+
+/* ── tick rail: the chart's latitude scale ───────────────────── */
+.rail{
+  position:fixed; inset-inline-start:0; top:0; bottom:0; width:var(--rail);
+  border-inline-end:1px solid var(--rule-soft);
+  background:var(--ink); z-index:30;
+  display:flex; flex-direction:column; align-items:center;
+  padding-block:18px; gap:14px;
+}
+.rail-ticks{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,var(--rule-soft) 0 1px,transparent 1px 28px);
+  background-position:0 64px; opacity:.5;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);
+          mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);}
+.rail-mark{
+  position:absolute; inset-inline-start:0; width:100%; height:1px; background:var(--signal);
+  transition:top .28s cubic-bezier(.4,0,.2,1); z-index:2;
+}
+.rail-mark::after{content:"";position:absolute;inset-inline-end:-4px;top:-3px;width:7px;height:7px;
+  background:var(--signal);transform:rotate(45deg)}
+.rail-coord{
+  font-family:var(--f-mono); font-size:9.5px; letter-spacing:.1em; color:var(--text-faint);
+  writing-mode:vertical-rl; text-orientation:mixed; margin-top:auto; user-select:none;
+}
+[dir="rtl"] .rail-coord{writing-mode:vertical-lr}
+.rail-btn{
+  width:36px;height:36px;border:1px solid var(--rule);background:var(--surface);color:var(--text-dim);
+  font-family:var(--f-mono);font-size:11px;font-weight:500;cursor:pointer;border-radius:2px;
+  display:grid;place-items:center;transition:.18s; z-index:3; padding:0;
+}
+.rail-btn:hover{color:var(--signal);border-color:var(--signal)}
+.rail-btn[aria-pressed="true"]{background:var(--signal);color:#0A1518;border-color:var(--signal)}
+
+/* ── shell ───────────────────────────────────────────────────── */
+.shell{margin-inline-start:var(--rail); max-width:var(--maxw); padding-inline:clamp(20px,4vw,64px)}
+section{padding-block:var(--gap); border-top:1px solid var(--rule-soft)}
+section:first-of-type{border-top:0}
+
+.eyebrow{
+  font-family:var(--f-mono); font-size:10.5px; font-weight:500; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--text-faint); margin:0 0 6px;
+  display:flex; align-items:center; gap:10px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule-soft);max-width:180px}
+h1,h2,h3{font-family:var(--f-display); font-weight:800; text-wrap:balance; margin:0}
+h2{font-size:clamp(28px,3.6vw,44px); letter-spacing:-.025em; line-height:1.08}
+h3{font-size:19px; letter-spacing:-.01em; font-weight:600}
+.standfirst{color:var(--text-dim); max-width:62ch; font-size:18px; margin:14px 0 0}
+.sec-head{margin-bottom:44px}
+
+/* ── hero ────────────────────────────────────────────────────── */
+.hero{position:relative; padding-block:clamp(56px,9vh,92px) var(--gap)}
+.contour{position:absolute; inset:-10% -40% auto -10%; height:130%; width:150%;
+  z-index:0; pointer-events:none; opacity:.5;
+  -webkit-mask-image:radial-gradient(120% 90% at 30% 40%,#000 20%,transparent 78%);
+          mask-image:radial-gradient(120% 90% at 30% 40%,#000 20%,transparent 78%);
+  transition:transform .5s cubic-bezier(.2,0,.2,1);}
+.hero > *:not(.contour){position:relative; z-index:1}
+h1{font-size:clamp(46px,8.4vw,104px); line-height:.92; letter-spacing:-.045em; margin-bottom:6px}
+h1 .sur{display:block; color:var(--signal)}
+.hero-role{font-family:var(--f-mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--text-dim); margin:0 0 30px}
+.thesis{font-size:clamp(20px,2.3vw,27px); line-height:1.44; max-width:30ch; font-weight:300; margin:0}
+.thesis em{font-style:italic; color:var(--signal)}
+
+.facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+  border:1px solid var(--rule); margin-top:44px; background:var(--surface)}
+.fact{padding:16px 18px; border-inline-start:1px solid var(--rule)}
+.fact:first-child{border-inline-start:0}
+.fact dt{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-faint);margin-bottom:6px}
+.fact dd{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;line-height:1.3}
+.fact dd small{display:block;font-family:var(--f-body);font-weight:300;font-size:13px;color:var(--text-dim);margin-top:3px}
+
+/* ── evidence chips ──────────────────────────────────────────── */
+.fig{font-family:var(--f-mono); font-size:.92em; font-weight:500; color:var(--signal);
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* ── lens bar ────────────────────────────────────────────────── */
+.lens{position:sticky; top:0; z-index:25; background:color-mix(in srgb,var(--ink) 92%,transparent);
+  backdrop-filter:blur(10px); border-block:1px solid var(--rule-soft);
+  margin-inline:calc(clamp(20px,4vw,64px) * -1); padding:11px clamp(20px,4vw,64px);
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.lens-label{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-faint);white-space:nowrap}
+.lens-opts{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.lens-opt{font-family:var(--f-mono);font-size:11.5px;padding:5px 11px;border:1px solid var(--rule);
+  background:transparent;color:var(--text-dim);cursor:pointer;border-radius:2px;transition:.16s;white-space:nowrap}
+.lens-opt:hover{border-color:var(--hydro);color:var(--hydro)}
+.lens-opt[aria-pressed="true"]{background:var(--signal);border-color:var(--signal);color:#0A1518;font-weight:500}
+
+/* ── timeline ────────────────────────────────────────────────── */
+.tl{display:grid; gap:0}
+.job{display:grid; grid-template-columns:132px 1fr; gap:28px; padding-block:30px;
+  border-top:1px solid var(--rule-soft)}
+.job:first-child{border-top:0;padding-top:0}
+.job-when{font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;color:var(--text-faint);
+  padding-top:5px;line-height:1.7}
+.job-when b{display:block;color:var(--hydro);font-weight:500}
+.job h3{margin-bottom:2px}
+.job .org{font-family:var(--f-mono);font-size:11.5px;color:var(--text-dim);margin:0 0 14px;letter-spacing:.03em}
+.job p{margin:0 0 12px;max-width:66ch}
+.job p:last-child{margin-bottom:0}
+.ships{display:grid;gap:0;margin-top:18px;border:1px solid var(--rule)}
+.ship{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:13px 16px;border-top:1px solid var(--rule-soft);align-items:baseline}
+.ship:first-child{border-top:0}
+.ship-name{font-family:var(--f-display);font-weight:600;font-size:14px;white-space:nowrap}
+.ship-name span{display:block;font-family:var(--f-mono);font-weight:400;font-size:10px;color:var(--text-faint);margin-top:3px}
+.ship-what{font-size:15px;color:var(--text-dim);line-height:1.55}
+
+/* query-budget bars */
+.qb{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  font-family:var(--f-mono);font-size:10.5px;color:var(--text-faint);margin-top:4px;max-width:360px}
+.qb-track{height:7px;background:var(--surface-2);position:relative;border:1px solid var(--rule-soft)}
+.qb-fill{position:absolute;inset-block:0;inset-inline-start:0;background:var(--rule)}
+.qb-fill.on{background:var(--signal)}
+
+/* ── project cards ───────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:1px;
+  background:var(--rule-soft);border:1px solid var(--rule-soft)}
+.card{background:var(--ink);padding:24px 22px 22px;display:flex;flex-direction:column;gap:11px;
+  position:relative;transition:background .2s}
+.card:hover{background:var(--surface)}
+.card.dim{opacity:.42}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.card-kind{font-family:var(--f-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-faint);border:1px solid var(--rule);padding:2px 6px;border-radius:2px;white-space:nowrap}
+.card-kind.work{color:var(--hydro);border-color:var(--hydro-soft)}
+.card h3{font-size:17px;line-height:1.24}
+.card .tag{font-family:var(--f-mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.02em;
+  margin:-5px 0 0;line-height:1.6}
+.card p{margin:0;font-size:15px;line-height:1.58;color:var(--text-dim);flex:1}
+.card-foot{display:flex;gap:14px;align-items:center;font-family:var(--f-mono);font-size:10.5px;
+  padding-top:4px;flex-wrap:wrap}
+.card-foot a{color:var(--hydro);text-decoration:none;border-bottom:1px solid var(--hydro-soft)}
+.card-foot a:hover{border-color:var(--hydro)}
+.card-foot .yr{color:var(--text-faint);margin-inline-start:auto}
+
+/* ── instrument panels ───────────────────────────────────────── */
+.inst{border:1px solid var(--rule);background:var(--surface);margin-top:36px}
+.inst-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);
+  background:var(--surface-2);flex-wrap:wrap}
+.inst-id{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;color:var(--signal);font-weight:700}
+.inst-title{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)}
+.inst-ctl{margin-inline-start:auto;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.ibtn{font-family:var(--f-mono);font-size:11px;padding:4px 10px;border:1px solid var(--rule);
+  background:var(--ink);color:var(--text-dim);cursor:pointer;border-radius:2px;transition:.15s}
+.ibtn:hover{color:var(--text);border-color:var(--hydro)}
+.ibtn[aria-pressed="true"]{background:var(--signal);border-color:var(--signal);color:#0A1518;font-weight:500}
+.ibtn.go{border-color:var(--signal);color:var(--signal)}
+.ibtn.go:hover{background:var(--signal);color:#0A1518}
+.irange{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:10.5px;color:var(--text-faint)}
+.irange input{width:104px;accent-color:var(--signal)}
+.inst-stage{position:relative;background:var(--ink)}
+.inst-stage canvas{display:block;width:100%;height:auto}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));border-top:1px solid var(--rule)}
+.ro{padding:11px 14px;border-inline-start:1px solid var(--rule-soft)}
+.ro:first-child{border-inline-start:0}
+.ro dt{font-family:var(--f-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)}
+.ro dd{margin:3px 0 0;font-family:var(--f-mono);font-size:18px;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ro dd.hot{color:var(--crit)} .ro dd.cool{color:var(--good)} .ro dd.sig{color:var(--signal)}
+.inst-note{padding:13px 16px;border-top:1px solid var(--rule-soft);font-size:14px;color:var(--text-dim);
+  line-height:1.6;max-width:78ch}
+.inst-note b{color:var(--text);font-weight:400;font-family:var(--f-display);font-size:13.5px}
+
+/* determinism table */
+.dtable{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:12px}
+.dtable th{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);
+  text-align:start;padding:9px 14px;border-bottom:1px solid var(--rule);font-weight:500}
+.dtable td{padding:10px 14px;border-bottom:1px solid var(--rule-soft);font-variant-numeric:tabular-nums}
+.dtable tr:last-child td{border-bottom:0}
+.dtable .sc{font-size:15px;font-weight:700}
+.dtable .bad{color:var(--crit)} .dtable .ok{color:var(--good)}
+.pill{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:2px;
+  border:1px solid currentColor}
+
+/* ── toolkit ─────────────────────────────────────────────────── */
+.kit{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;
+  background:var(--rule-soft);border:1px solid var(--rule-soft)}
+.kit-g{background:var(--ink);padding:20px 20px 22px}
+.kit-g h3{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--hydro);font-weight:500;margin-bottom:12px}
+.kit-g ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:5px}
+.kit-g li{font-family:var(--f-mono);font-size:11.5px;color:var(--text-dim);
+  border:1px solid var(--rule);padding:3px 8px;border-radius:2px}
+.kit-g li.key{color:var(--signal);border-color:var(--signal-soft)}
+
+/* ── contact ─────────────────────────────────────────────────── */
+.cta{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(28px,5vw,64px);align-items:start}
+.links{display:flex;flex-direction:column;gap:2px;margin-top:26px}
+.links a{font-family:var(--f-mono);font-size:13px;text-decoration:none;color:var(--text-dim);
+  padding:9px 0;border-bottom:1px solid var(--rule-soft);display:flex;justify-content:space-between;gap:16px;transition:.15s}
+.links a:hover{color:var(--signal)}
+.links a small{color:var(--text-faint);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
+  padding:24px clamp(20px,4vw,64px);font-family:var(--f-mono);font-size:10.5px;color:var(--text-faint);
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;max-width:var(--maxw)}
+
+/* ── command palette ─────────────────────────────────────────── */
+.pal{position:fixed;inset:0;z-index:90;background:rgba(5,12,14,.72);backdrop-filter:blur(3px);
+  display:grid;place-items:start center;padding-top:12vh}
+.pal[hidden]{display:none}
+.pal-box{width:min(560px,92vw);background:var(--surface);border:1px solid var(--rule);
+  box-shadow:var(--shadow);border-radius:3px;overflow:hidden}
+.pal-box input{width:100%;border:0;border-bottom:1px solid var(--rule);background:var(--surface-2);
+  color:var(--text);font-family:var(--f-mono);font-size:14px;padding:15px 18px;outline:none}
+.pal-list{max-height:46vh;overflow-y:auto;list-style:none;margin:0;padding:6px}
+.pal-list li{padding:9px 13px;font-family:var(--f-mono);font-size:12.5px;cursor:pointer;
+  display:flex;justify-content:space-between;gap:14px;border-radius:2px;color:var(--text-dim)}
+.pal-list li[aria-selected="true"]{background:var(--signal);color:#0A1518}
+.pal-list li small{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+.pal-hint{padding:9px 18px;border-top:1px solid var(--rule);font-family:var(--f-mono);
+  font-size:10px;color:var(--text-faint);letter-spacing:.06em}
+
+/* ── RTL / Arabic mode ───────────────────────────────────────── */
+[dir="rtl"] body, [dir="rtl"]{font-family:var(--f-ar)}
+[dir="rtl"] h1,[dir="rtl"] h2,[dir="rtl"] h3,[dir="rtl"] .thesis,[dir="rtl"] .standfirst,
+[dir="rtl"] .eyebrow,[dir="rtl"] .card p,[dir="rtl"] .job p,[dir="rtl"] .ship-what,
+[dir="rtl"] .inst-note,[dir="rtl"] .fact dd{font-family:var(--f-ar)}
+[dir="rtl"] h1{letter-spacing:0;line-height:1.1}
+[dir="rtl"] .eyebrow,[dir="rtl"] .lens-label{letter-spacing:0}
+[dir="rtl"] .contour{transform:scaleX(-1)}
+.ar-note{display:none;font-family:var(--f-ar);font-size:13px;color:var(--text-faint);
+  border-inline-start:2px solid var(--hydro);padding-inline-start:12px;margin-top:20px;line-height:1.8}
+[dir="rtl"] .ar-note{display:block}
+
+@media (max-width:820px){
+  :root{--rail:46px}
+  .job{grid-template-columns:1fr;gap:8px}
+  .job-when{padding-top:0}
+  .cta{grid-template-columns:1fr}
+  .rail-coord{display:none}
+  body{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .contour{transition:none}
+}
+</style>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="rail" aria-label="Page controls">
+  <div class="rail-ticks"></div>
+  <div class="rail-mark" id="railMark" style="top:0"></div>
+  <button class="rail-btn" id="btnPal" style="font-size:10px" title="Command palette — press K">⌘K</button>
+  <button class="rail-btn" id="btnAr" aria-pressed="false" title="العربية — switch the interface to Arabic (A)">ع</button>
+  <button class="rail-btn" id="btnTheme" title="Toggle chart paper / bathymetric ink (T)">◐</button>
+  <div class="rail-coord">30.0194° N · 31.4095° E</div>
+</nav>
+
+<main class="shell" id="main">
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+  <canvas class="contour" id="contour" aria-hidden="true"></canvas>
+
+  <p class="eyebrow" data-ar="مهندس برمجيات — القاهرة / أبوظبي">Software Engineer — Cairo / Abu Dhabi</p>
+  <h1><span data-ar="مروان">Marwan</span><span class="sur" data-ar="أبو ضيف">Abudaif</span></h1>
+  <p class="hero-role" data-ar="مهندس برمجيات، METI · طالب هندسة حاسبات، الجامعة الأمريكية بالقاهرة · تخرّج ديسمبر ٢٠٢٦">
+    Software Engineer, METI · Computer Engineering senior, AUC · Graduating Dec 2026</p>
+
+  <p class="thesis" data-ar="تستهويني المشكلات التي لا تظهر إلا تحت الضغط — <em>ميزانية الإطار، وفقد الحزم، وعدد الاستعلامات</em>، والأخطاء التي تعتمد على سرعة تحديث شاشتك.">
+    I like the problems that only surface under load — <em>frame budgets, packet loss, query counts</em>, and race conditions that depend on how fast your screen refreshes.</p>
+
+  <dl class="facts">
+    <div class="fact"><dt data-ar="الوضع">Status</dt><dd data-ar="متاح لوظائف هندسة برمجيات &lt;small&gt;اعتبارًا من يناير ٢٠٢٧&lt;/small&gt;">Open to SWE roles<small>Available from Jan 2027</small></dd></div>
+    <div class="fact"><dt data-ar="الخبرة">In production</dt><dd data-ar="١٨ شهرًا &lt;small&gt;أربعة منتجات مشحونة&lt;/small&gt;"><b class="fig">18 months</b><small>Four products shipped</small></dd></div>
+    <div class="fact"><dt data-ar="التخصص">Specialism</dt><dd data-ar="منصتان جغرافيتان &lt;small&gt;أقطار + GuloGulo، شُحنتا للإنتاج&lt;/small&gt;">Two geospatial platforms<small>Aqtar + GuloGulo, both shipped</small></dd></div>
+    <div class="fact"><dt data-ar="العمل الفردي">Solo build</dt><dd data-ar="بوابة MVS &lt;small&gt;مهندس وحيد، لارافيل + Next.js&lt;/small&gt;">MVS Client Portal<small>Sole engineer, Laravel + Next.js</small></dd></div>
+    <div class="fact"><dt data-ar="التصريح">Authorization</dt><dd data-ar="مصر + إقامة إماراتية &lt;small&gt;سوقان دون رعاية تأشيرة&lt;/small&gt;">Egypt + UAE residency<small>Two markets, no sponsorship</small></dd></div>
+  </dl>
+</section>
+
+<!-- ══════════════ LENS ══════════════ -->
+<div class="lens" role="group" aria-label="Reading lens">
+  <span class="lens-label" data-ar="أوظّف لـ">Hiring for</span>
+  <div class="lens-opts" id="lensOpts">
+    <button class="lens-opt" data-lens="all" aria-pressed="true" data-ar="أي دور">Any role</button>
+    <button class="lens-opt" data-lens="fullstack" aria-pressed="false" data-ar="تطوير متكامل">Full-stack</button>
+    <button class="lens-opt" data-lens="backend" aria-pressed="false" data-ar="خلفية">Backend</button>
+    <button class="lens-opt" data-lens="ai" aria-pressed="false" data-ar="ذكاء اصطناعي">AI &amp; ML</button>
+    <button class="lens-opt" data-lens="rt" aria-pressed="false" data-ar="رسوميات وزمن حقيقي">Graphics &amp; real-time</button>
+    <button class="lens-opt" data-lens="embedded" aria-pressed="false" data-ar="أنظمة مدمجة">Embedded</button>
+  </div>
+</div>
+
+<!-- ══════════════ WORK ══════════════ -->
+<section id="work">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="السجل">Station 01 — Record</p>
+    <h2 data-ar="ثمانية عشر شهرًا من العمل الإنتاجي">Eighteen months of production work</h2>
+    <p class="standfirst" id="workStand" data-ar="RoboGarden شركة تابعة لـ Micro Engineering Tech، وهي شركة كندية للبرمجيات وهندسة المساحة — ومن هنا جاء التخصص في الأنظمة الجغرافية.">RoboGarden is a subsidiary of Micro Engineering Tech, a Calgary software <em>and geomatics</em> firm — which is where the geospatial specialism comes from.</p>
+  </div>
+
+  <div class="tl">
+    <article class="job">
+      <div class="job-when"><b>Jun 2025 —</b>present<br>Remote · Canada</div>
+      <div>
+        <h3 data-ar="مهندس برمجيات">Software Engineer</h3>
+        <p class="org">METI Software (Micro Engineering Tech) — promoted from Frontend Intern</p>
+        <p>Four products delivered back-to-back — from a ten-engineer Jira and Bitbucket process on one, to sole ownership of the entire stack on another.</p>
+
+        <div class="ships">
+          <div class="ship">
+            <div class="ship-name">MVS Client Portal<span>Aug–Sep 2026 · solo</span></div>
+            <div class="ship-what">Sole engineer on a multi-tenant Laravel 12 + Next.js 16 product — nine features across three roles, <b class="fig">30 migrations and 49 test classes</b>. Engagement health is computed on read, never stored — a stored score is a score that can go stale — which collapsed a naive per-screen implementation from <b class="fig">21 queries to 3</b>.
+              <div class="qb"><span>naive</span><div class="qb-track"><div class="qb-fill" style="width:100%"></div></div><span>21</span></div>
+              <div class="qb"><span>shipped</span><div class="qb-track"><div class="qb-fill on" style="width:14.3%"></div></div><span>3</span></div>
+              <p style="margin:10px 0 0">Unauthorized clients get a <b class="fig">404, not a 403</b>, and the role check runs first so nothing leaks through the error itself.</p>
+            </div>
+          </div>
+          <div class="ship">
+            <div class="ship-name">Aqtar<span>Oct 2025–Jan 2026 · ~10 eng</span></div>
+            <div class="ship-what">Saudi-facing B2B <b>geospatial services</b> marketplace — topographic, hydrographic and aerial data. Owned the Ratings &amp; Reviews module, content reporting and moderation end-to-end, admin user management, and the EN/AR localisation layer. <b class="fig">195 commits</b> across the engagement, third-largest contributor on the team.</div>
+          </div>
+          <div class="ship">
+            <div class="ship-name">GuloGulo DMT<span>May–Sep 2026 · team of 7</span></div>
+            <div class="ship-what">Geospatial AI platform on Laravel + PostGIS. Owned chat, datasets and settings — <b class="fig">8 merged pull requests</b> — including a resumable multipart upload engine for <b class="fig">40 GiB archives</b> behind a hand-written SSE parser that degrades to polling under full-jitter backoff.</div>
+          </div>
+          <div class="ship">
+            <div class="ship-name">AI Author Tool<span>Mar–Apr 2026 · Angular</span></div>
+            <div class="ship-what">Parses uploaded documents into structured courses. Shipped the Lesson → Sections → Bricks hierarchy, drag-and-drop reordering, content bricks, three phases of EN/AR localisation with RTL, and the SSE course-generation progress stream.</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="job">
+      <div class="job-when"><b>Aug 2026</b><br>Cairo, Egypt</div>
+      <div>
+        <h3 data-ar="متدرب هندسة برمجيات">Software Engineering Intern</h3>
+        <p class="org">Pulse (formerly Giza Systems) — BOOKSHELF</p>
+        <p>Four-week placement. Sole author of the delivered Angular 22 application — <b class="fig">~3.8k lines</b> of signals-based state, typed reactive forms and route guards over a six-route access matrix — then wrote the API spec the team would build against: a versioned <code style="font-family:var(--f-mono);font-size:13px">/api/v1</code> contract, a consistent error envelope, and an optimistic-concurrency version field.</p>
+      </div>
+    </article>
+
+    <article class="job">
+      <div class="job-when"><b>Aug 2025</b><br>Cairo, Egypt</div>
+      <div>
+        <h3 data-ar="متدرب بحث وتطوير">Fixed Networks R&amp;D Intern</h3>
+        <p class="org">Nokia &amp; WE Telecom</p>
+        <p>An exploratory placement on predictive diagnostics for FTTH optical networks — Python time-series work against the team's network simulator.</p>
+      </div>
+    </article>
+
+    <article class="job">
+      <div class="job-when"><b>Jan–Jun 2025</b><br>Cairo, Egypt</div>
+      <div>
+        <h3 data-ar="قائد المناهج التقنية">Technical Curriculum Lead &amp; Instructor</h3>
+        <p class="org">RoboGarden — a Micro Engineering Tech (METI) company</p>
+        <p><b class="fig">50+ hours</b> of curriculum across Python, JavaScript and web fundamentals, with auto-grader scripts and lab scaffolding. <b class="fig">100% pilot-cohort satisfaction</b>.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ══════════════ INSTRUMENT 01 ══════════════ -->
+<section id="i1">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="المختبر ٠١">Station 02 — Instrument 01</p>
+    <h2 data-ar="لماذا لا يُفحص كل زوج">Why you don't check every pair</h2>
+    <p class="standfirst" data-ar="التقسيم المكاني الذي يستخدمه GeoFighters لفصل الأعداء — يعمل هنا مباشرة. بدّل بين الطريقتين وراقب عدد الفحوصات.">The uniform spatial hash GeoFighters uses for enemy separation, running live below. Flip it to the naive all-pairs sweep and watch the check counter — and the frame budget — go.</p>
+  </div>
+
+  <div class="inst">
+    <div class="inst-bar">
+      <span class="inst-id">I-01</span>
+      <span class="inst-title">Broadphase</span>
+      <div class="inst-ctl">
+        <button class="ibtn" id="bpHash" aria-pressed="true">Spatial hash</button>
+        <button class="ibtn" id="bpNaive" aria-pressed="false">Naive O(n²)</button>
+        <label class="irange">agents <input type="range" id="bpN" min="120" max="1400" step="20" value="560"><span id="bpNv">560</span></label>
+        <button class="ibtn" id="bpGrid" aria-pressed="true">Grid</button>
+      </div>
+    </div>
+    <div class="inst-stage"><canvas id="bpCanvas" height="380" aria-label="Live broadphase simulation: agents separated by a uniform spatial hash"></canvas></div>
+    <dl class="readouts">
+      <div class="ro"><dt>Agents</dt><dd id="roN">560</dd></div>
+      <div class="ro"><dt>Pair checks / frame</dt><dd id="roChecks" class="sig">—</dd></div>
+      <div class="ro"><dt>Sim time / frame</dt><dd id="roMs">—</dd></div>
+      <div class="ro"><dt>Frame rate</dt><dd id="roFps">—</dd></div>
+      <div class="ro"><dt>Occupied cells</dt><dd id="roCells">—</dd></div>
+    </dl>
+    <p class="inst-note"><b>Shipped detail.</b> The real engine pairs this with an allocation-free circle-versus-AABB path — <code style="font-family:var(--f-mono);font-size:13px">collideAABB</code> takes a caller-owned scratch object, so the hot path allocates nothing and the convenience wrapper is documented as one-off-only. Broadphase alone isn't the win; broadphase that doesn't produce garbage is.</p>
+  </div>
+</section>
+
+<!-- ══════════════ PROJECTS ══════════════ -->
+<section id="projects">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="المشاريع">Station 03 — Selected work</p>
+    <h2 data-ar="مشاريع مختارة">Selected work</h2>
+    <p class="standfirst" data-ar="استخدم العدسة أعلى الصفحة لإعادة ترتيب هذه البطاقات حسب الدور الذي توظّف من أجله.">Use the lens at the top of the page to re-rank these for the role you're filling.</p>
+  </div>
+  <div class="grid" id="projGrid">
+
+    <article class="card" data-tags="ai fullstack rt" data-rank-ai="1" data-rank-fullstack="2" data-rank-backend="4">
+      <div class="card-top"><h3>GEM Tours — Project Horus</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">Next.js 16 · Vertex AI · Firestore vector index · Capacitor</p>
+      <p>Point a phone at an artifact in the Grand Egyptian Museum and hear its history in your language. <b class="fig">18k lines across 72 modules</b>. Multimodal embeddings in a <b class="fig">1408-dimension vector index</b> identify it in <b class="fig">under 300 ms</b>.</p>
+      <p>Inference cost treated as an architectural constraint: a three-tier cache ending in a shared Firestore store, so one visitor's generation serves every later visitor — <b class="fig">~$0.008 per visitor</b>. Arabic-first, not retrofitted.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="rt fullstack" data-rank-rt="1" data-rank-fullstack="3" data-rank-ai="5" data-rank-backend="5">
+      <div class="card-top"><h3>GeoFighters 2.0</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">TypeScript · Three.js · Svelte 5 · Rapier WASM · miniplex ECS · WebRTC</p>
+      <p>A browser-native co-op 3D shooter, <b class="fig">45k lines</b> of it. Host-star WebRTC topology with 30 Hz snapshots on <b>unreliable, unordered</b> SCTP channels — see Instrument 02. TURN on :443/TCP after finding CGNAT is the norm on Egyptian and UAE mobile carriers, which is exactly the Capacitor build's audience.</p>
+      <p>Frame limiter skips frames <em>before</em> any work while the clock keeps accumulating, so the simulation stays real-time: <b class="fig">160 → 59 fps</b>.</p>
+      <div class="card-foot"><a href="https://github.com/MarwanMoh11/Geo-FightersV2" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2025–26</span></div>
+    </article>
+
+    <article class="card" data-tags="rt" data-rank-rt="2" data-rank-backend="6" data-rank-ai="7">
+      <div class="card-top"><h3>CARRY — After Hours Bowling</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">Three.js · Rapier · Capacitor · esbuild</p>
+      <p><b class="fig">16.5k lines</b> with <b class="fig">17 test suites</b> — one of which exists because of the bug in Instrument 03. Stone pins are genuinely heavier and resist falling; Glass pins genuinely lighter and fly. The pocket read grades arrival position, angle, pace and first contact, and <b>can never cost you anything</b>: ignore the system and you score exactly what you would have before it existed.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="ai" data-rank-ai="2" data-rank-backend="7">
+      <div class="card-top"><h3>TELOS II — Senior Thesis</h3><span class="card-kind work">Team of 7 · lead</span></div>
+      <p class="tag">FastAPI · Python · React · LLM evaluation</p>
+      <p>Measuring LLM sycophancy: can a recommendation adapt to evidence while resisting conversational pressure? The architecture's answer is that <b>the model renders but never decides</b> — action authority sits in a versioned, SHA-256-pinned YAML policy behind an independent decision guard, and the renderer gets a deep copy so it cannot mutate the decision.</p>
+      <p>Evaluation protocol is predeclared: <b class="fig">288 outputs</b> per model per domain, with parse failures counted rather than silently discarded and a runtime fallback treated as a delivered outcome, not an exclusion. The README states plainly what it is not.</p>
+      <div class="card-foot"><span class="yr">2026–</span></div>
+    </article>
+
+    <article class="card" data-tags="backend fullstack" data-rank-backend="1" data-rank-fullstack="1" data-rank-ai="6">
+      <div class="card-top"><h3>MVS Client Portal</h3><span class="card-kind work">METI · sole engineer</span></div>
+      <p class="tag">Laravel 12 · Next.js 16 · React 19 · MySQL · Playwright</p>
+      <p>A whole multi-tenant product, start to finish, alone. The interesting part is what it deliberately <em>doesn't</em> use: no data-fetching library, no form library, no client-state library, no schema-validation library — each decision written down in an ADR rather than defended after the fact.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="embedded rt" data-rank-embedded="1" data-rank-rt="4" data-rank-backend="8">
+      <div class="card-top"><h3>Smart Red-Light Detection</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">C · FreeRTOS 11.1 · TM4C123GXL Cortex-M4 · arm-none-eabi-gcc</p>
+      <p>Six tasks across four priority levels, communicating only through queues, in an <b class="fig">11 KB image</b>. SensorTask polls at 50 Hz behind a 150–2000 ms dwell-time filter that rejects both fast swipes and parked objects; ViolationTask is a pure dispatcher fanning out to independent alert, camera and log consumers.</p>
+      <p>Concurrency reasoned about rather than reflexively locked: the shared light state is single-writer/single-reader and documented as safe unlocked on this core, while UART — genuinely contended by three tasks — <em>is</em> mutex-protected.</p>
+      <div class="card-foot"><a href="https://github.com/MarwanMoh11" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="embedded ai" data-rank-embedded="2" data-rank-ai="4">
+      <div class="card-top"><h3>Indoor positioning without beacons</h3><span class="card-kind">Inside GEM Tours</span></div>
+      <p class="tag">DeviceMotion API · IMU dead reckoning · QR drift reset</p>
+      <p><code style="font-family:var(--f-mono);font-size:13px">PedestrianTracker.ts</code> — step detection over raw device motion (1.2 g threshold, 0.7 m stride, five-sample moving average) integrated with heading into a running position estimate, then dead-reckoning drift reset at QR checkpoints. No beacons, no infrastructure, no per-museum install. Paired with haptic proximity feedback.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="ai rt" data-rank-ai="3" data-rank-rt="5" data-rank-embedded="5">
+      <div class="card-top"><h3>Pixel-Perfect</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">PyTorch · ESRGAN · RRDBNet · PSNR / SSIM / LPIPS</p>
+      <p>GAN super-resolution for pixel art over an ~89,000-image corpus, with a custom edge-aware sharpness loss. The decision worth the interview: training pairs are built by <b>nearest-neighbour</b> downsampling rather than bicubic, so the low-resolution input keeps blocky geometry instead of inventing smooth intermediates the model then learns to expect.</p>
+      <div class="card-foot"><a href="https://github.com/MarwanMoh11" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="embedded fullstack" data-rank-embedded="3" data-rank-fullstack="5" data-rank-rt="6">
+      <div class="card-top"><h3>GymTrack</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">SwiftUI · SwiftData · Swift Charts · zero dependencies</p>
+      <p>Rewritten from a Next.js PWA to <b class="fig">7.3k lines of native Swift</b> with no third-party packages at all. Personal records recognised on estimated 1RM, so heavier-for-fewer and lighter-for-more both count; kilograms are canonical in storage so switching units never rewrites history; unfinished sessions survive a force-quit and auto-close after twelve hours.</p>
+      <div class="card-foot"><a href="https://github.com/MarwanMoh11/Gymtrack" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2025–26</span></div>
+    </article>
+
+    <article class="card" data-tags="backend ai" data-rank-backend="2" data-rank-ai="8" data-rank-fullstack="6">
+      <div class="card-top"><h3>BMO — agent host</h3><span class="card-kind">Solo</span></div>
+      <p class="tag">LiteLLM · MCP · launchd · Tauri · supply-chain audit</p>
+      <p>Built around its security posture — localhost-only, scoped writes, every dependency version-pinned because the host refetches unpinned npm plugins on every start. A maintainer-to-repository audit caught <b class="fig">two namesquatted packages</b> before they ran. Mail and screen contents are treated as data, never as instructions.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="backend fullstack" data-rank-backend="3" data-rank-fullstack="4">
+      <div class="card-top"><h3>GuloGulo DMT</h3><span class="card-kind work">METI · team of 7</span></div>
+      <p class="tag">Next.js 16 · Laravel 13 · PostgreSQL + PostGIS · SSE · S3</p>
+      <p>Designed the visualization contract: a chart may never cost the reader the reply — the array is optional, each entry validates in isolation, nothing throws — and <b>only data crosses the boundary</b>. No HTML, script, style, colour, URL or chart config. It enforces the agent schema's own ceilings down to the GeoJSON property-key pattern, and reconciles a documented gap between two generated API specs.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+    <article class="card" data-tags="embedded" data-rank-embedded="4" data-rank-rt="7" data-rank-backend="9">
+      <div class="card-top"><h3>Digital Alarm Clock</h3><span class="card-kind">Coursework</span></div>
+      <p class="tag">Verilog · Vivado · AUC Digital Design II</p>
+      <p><b class="fig">882 lines across 15 modules</b> — including a two-flop synchronizer for the asynchronous button inputs, a debouncer and a rising-edge detector, with the control-path and datapath diagrams to match.</p>
+      <div class="card-foot"><span class="yr">2026</span></div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ══════════════ INSTRUMENT 02 ══════════════ -->
+<section id="i2">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="المختبر ٠٢">Station 04 — Instrument 02</p>
+    <h2 data-ar="نفس الرمية، نفس البذرة، نتيجة مختلفة">The same throw, the same seed, a different score</h2>
+    <p class="standfirst" data-ar="خطأ حقيقي من لعبة CARRY: دالة «استقرّت» ليست رتيبة — دبّوس ساقط قد يتدحرج ثم يهدأ ثم يصطدم بشيء آخر.">A real bug from CARRY. <code style="font-family:var(--f-mono);font-size:15px">settled()</code> is not monotone — a knocked pin can roll, go quiet, then hit something else. The shot end was polled once per <em>rendered</em> frame, so a 120 Hz phone stopped inside quiet windows a 30 Hz laptop stepped straight over, and read the rack at a different simulation step.</p>
+  </div>
+
+  <div class="inst">
+    <div class="inst-bar">
+      <span class="inst-id">I-02</span>
+      <span class="inst-title">Determinism</span>
+      <div class="inst-ctl">
+        <button class="ibtn" id="dtPoll" aria-pressed="true">Poll per rendered frame</button>
+        <button class="ibtn" id="dtLatch" aria-pressed="false">Latch on sim clock</button>
+        <button class="ibtn go" id="dtNext">New seeded shot ↻</button>
+        <button class="ibtn go" id="dtSweep">Sweep 250 throws</button>
+      </div>
+    </div>
+    <div class="inst-stage"><canvas id="dtCanvas" height="250" aria-label="Timeline of pin motion, showing where each display rate concluded the shot had settled"></canvas></div>
+    <div style="overflow-x:auto">
+      <table class="dtable">
+        <thead><tr><th>Display rate</th><th>Polls the predicate</th><th>Concluded settled at</th><th>Pins read</th><th>Score</th><th></th></tr></thead>
+        <tbody id="dtBody"></tbody>
+      </table>
+    </div>
+    <dl class="readouts">
+      <div class="ro"><dt>Seed</dt><dd id="roSeed">—</dd></div>
+      <div class="ro"><dt>True final score</dt><dd id="roTrue" class="cool">—</dd></div>
+      <div class="ro"><dt>Agreement across rates</dt><dd id="roAgree">—</dd></div>
+      <div class="ro"><dt>Sweep: divergent throws</dt><dd id="roSweep">not run</dd></div>
+    </dl>
+    <p class="inst-note"><b>The fix, and the honest footnote.</b> Latch the shot end inside <code style="font-family:var(--f-mono);font-size:13px">Alley.step()</code> on the simulation clock, and give <code style="font-family:var(--f-mono);font-size:13px">Alley.run()</code> ownership of step batching — the render rate stops being an input to the score. Both divergent throws are kept verbatim as regression tests. The panel above reconstructs the failure mode; in the project's own test suite, <b class="fig">2 of 250</b> legal throws scored differently at 30, 60 and 120 Hz.</p>
+  </div>
+</section>
+
+<!-- ══════════════ INSTRUMENT 03 ══════════════ -->
+<section id="i3">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="المختبر ٠٣">Station 05 — Instrument 03</p>
+    <h2 data-ar="لماذا الترتيب مؤذٍ">Why ordering hurts</h2>
+    <p class="standfirst" data-ar="قناة SCTP واحدة لكل زوج، غير مرتّبة وغير موثوقة. عند ٣٠ لقطة في الثانية لا يهم إلا الأحدث.">GeoFighters negotiates one channel per peer pair, id 0, <code style="font-family:var(--f-mono);font-size:15px">ordered:false, maxRetransmits:0</code>. At 30 Hz only the newest snapshot matters, so a lost packet should cost you one frame — not stall every frame behind it. Drag the loss up and watch the reliable lane stutter.</p>
+  </div>
+
+  <div class="inst">
+    <div class="inst-bar">
+      <span class="inst-id">I-03</span>
+      <span class="inst-title">Transport</span>
+      <div class="inst-ctl">
+        <label class="irange">packet loss <input type="range" id="txLoss" min="0" max="40" step="1" value="12"><span id="txLossV">12%</span></label>
+        <label class="irange">RTT <input type="range" id="txRtt" min="40" max="320" step="10" value="140"><span id="txRttV">140ms</span></label>
+        <button class="ibtn" id="txReset">Reset counters</button>
+      </div>
+    </div>
+    <div class="inst-stage"><canvas id="txCanvas" height="300" aria-label="Two receiver lanes rendering the same 30 Hz snapshot stream over a reliable ordered channel and an unreliable unordered channel"></canvas></div>
+    <dl class="readouts">
+      <div class="ro"><dt>Reliable — stalls</dt><dd id="roStall" class="hot">0</dd></div>
+      <div class="ro"><dt>Reliable — worst freeze</dt><dd id="roFreeze" class="hot">0 ms</dd></div>
+      <div class="ro"><dt>Unreliable — worst gap</dt><dd id="roGap" class="cool">0 ms</dd></div>
+      <div class="ro"><dt>Snapshots dropped</dt><dd id="roDrop">0</dd></div>
+      <div class="ro"><dt>Superseded, discarded</dt><dd id="roStale">0</dd></div>
+    </dl>
+    <p class="inst-note"><b>What stays on the reliable path.</b> Not everything wants this trade. Low-rate traffic that must arrive exactly once — shoot events, chest opens, revives, game-over — deliberately stays on the socket.io relay. And when ICE fails, which it does on roughly 10–15% of networks without TURN, the channel simply never opens and that one peer keeps using the relay. The design degrades per-peer, not per-session.</p>
+  </div>
+</section>
+
+<!-- ══════════════ TOOLKIT ══════════════ -->
+<section id="toolkit">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="الأدوات">Station 06 — Toolkit</p>
+    <h2 data-ar="الأدوات">Toolkit</h2>
+    <p class="standfirst" data-ar="المميّز بالبرتقالي هو ما يحمل ثقل الإنتاج اليومي.">Highlighted items are the ones carrying production weight day to day.</p>
+  </div>
+  <div class="kit">
+    <div class="kit-g"><h3>Programming languages</h3><ul>
+      <li class="key">TypeScript</li><li class="key">PHP 8.3</li><li class="key">Python</li><li>Swift</li><li>C</li><li>C++</li><li>SQL</li><li>Kotlin</li><li>Verilog</li></ul></div>
+    <div class="kit-g"><h3>Frontend</h3><ul>
+      <li class="key">React 19 / Next.js 16</li><li class="key">Angular 22</li><li>Svelte 5</li><li>Tailwind v4</li><li>Base UI / shadcn</li><li>Three.js</li><li>SwiftUI</li></ul></div>
+    <div class="kit-g"><h3>Backend &amp; data</h3><ul>
+      <li class="key">Laravel 12/13</li><li>FastAPI</li><li>Node / socket.io</li><li class="key">PostgreSQL + PostGIS</li><li>MySQL</li><li>SwiftData</li><li>Firestore</li></ul></div>
+    <div class="kit-g"><h3>Protocol &amp; transport</h3><ul>
+      <li class="key">SSE (hand-written parser)</li><li class="key">WebRTC / SCTP</li><li>ICE · STUN · TURN</li><li>S3 multipart</li><li>OpenAPI contracts</li><li>Laravel Echo / Pusher</li></ul></div>
+    <div class="kit-g"><h3>Testing &amp; quality</h3><ul>
+      <li class="key">Playwright</li><li class="key">PHPUnit</li><li>Vitest</li><li>Pytest</li><li>Determinism harnesses</li><li>Route × role sweeps</li></ul></div>
+    <div class="kit-g"><h3>AI &amp; infra</h3><ul>
+      <li class="key">LLM evaluation design</li><li>Vertex AI · Gemini</li><li>Vector search</li><li>MCP tooling</li><li>PyTorch / GAN training</li><li>Docker</li><li>Bitbucket Pipelines</li><li>AWS</li></ul></div>
+    <div class="kit-g"><h3>Education &amp; certification</h3><ul>
+      <li>AZ-900 Azure Fundamentals</li><li class="key">GPA 3.48 / 4.0 — AUC</li><li>Study abroad: UC3M Madrid</li></ul></div>
+    <div class="kit-g"><h3>Spoken languages</h3><ul>
+      <li class="key">Arabic — native</li><li class="key">English — fluent</li><li>Four bilingual EN/AR products shipped</li></ul></div>
+  </div>
+</section>
+
+<!-- ══════════════ CONTACT ══════════════ -->
+<section id="contact">
+  <div class="sec-head">
+    <p class="eyebrow" data-ar="التواصل">Station 07 — Contact</p>
+    <h2 data-ar="لنتحدث">Get in touch</h2>
+    <p class="standfirst" data-ar="متاح لوظائف هندسة البرمجيات ابتداءً من يناير ٢٠٢٧ — في مصر والإمارات أو عن بُعد.">Graduating December 2026 and available from January 2027, in Egypt, the UAE, or remote across EMEA.</p>
+  </div>
+  <div class="cta">
+    <div>
+      <div class="links">
+        <a href="mailto:MarwanMo11@aucegypt.edu">MarwanMo11@aucegypt.edu <small>Email</small></a>
+        <a href="https://www.linkedin.com/in/marwan-abudaif-088567283/" target="_blank" rel="noopener">/in/marwan-abudaif <small>LinkedIn</small></a>
+        <a href="https://github.com/MarwanMoh11" target="_blank" rel="noopener">MarwanMoh11 <small>GitHub</small></a>
+      </div>
+    </div>
+    <div>
+      <p class="standfirst" style="font-size:16px;margin-top:0">Work authorization for both Egypt and the UAE, with a full military-service exemption — no visa dependency in either market. CV available on request.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>Marwan Abudaif — Cairo &amp; Abu Dhabi</span>
+  <span>Updated September 2026</span>
+</footer>
+
+<div class="pal" id="pal" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="pal-box">
+    <input id="palInput" type="text" placeholder="Jump to a section, or switch lens…" autocomplete="off" spellcheck="false">
+    <ul class="pal-list" id="palList" role="listbox"></ul>
+    <div class="pal-hint">↑↓ move · ⏎ run · esc close · shortcuts: K palette · A العربية · T theme</div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const root = document.documentElement;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const css = n => getComputedStyle(root).getPropertyValue(n).trim();
+
+/* ─── theme ─────────────────────────────────────────────────── */
+const prefersLight = matchMedia("(prefers-color-scheme: light)");
+const isLight = () => root.dataset.theme ? root.dataset.theme === "light" : prefersLight.matches;
+$("#btnTheme").addEventListener("click", () => {
+  root.dataset.theme = isLight() ? "dark" : "light";
+  repaint();
+});
+prefersLight.addEventListener("change", repaint);
+
+/* ─── Arabic / RTL ──────────────────────────────────────────── */
+const btnAr = $("#btnAr");
+function setArabic(on){
+  root.dir = on ? "rtl" : "ltr";
+  root.lang = on ? "ar" : "en";
+  btnAr.setAttribute("aria-pressed", String(on));
+  $$("[data-ar]").forEach(el => {
+    if (!el.dataset.en) el.dataset.en = el.innerHTML;
+    el.innerHTML = on ? el.dataset.ar : el.dataset.en;
+  });
+  repaint();
+}
+btnAr.addEventListener("click", () => setArabic(root.dir !== "rtl"));
+
+/* ─── lens ──────────────────────────────────────────────────── */
+const LENS_LABEL = {
+  all:"Any role", fullstack:"Full-stack", backend:"Backend", ai:"AI & ML",
+  rt:"Graphics & real-time", embedded:"Embedded"
+};
+const grid = $("#projGrid");
+const cards = $$("#projGrid .card");
+const baseOrder = cards.slice();
+
+function applyLens(lens){
+  $$(".lens-opt").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lens === lens)));
+
+  const first = new Map();
+  if (!reduce) cards.forEach(c => first.set(c, c.getBoundingClientRect()));
+
+  const ranked = baseOrder.slice().sort((a,b) => {
+    if (lens === "all") return baseOrder.indexOf(a) - baseOrder.indexOf(b);
+    const ra = +(a.dataset["rank"+lens] || 99), rb = +(b.dataset["rank"+lens] || 99);
+    return ra - rb || baseOrder.indexOf(a) - baseOrder.indexOf(b);
+  });
+  ranked.forEach(c => {
+    const rel = lens === "all" || c.dataset.tags.split(" ").includes(lens);
+    c.classList.toggle("dim", !rel);
+    grid.appendChild(c);
+  });
+
+  if (!reduce) requestAnimationFrame(() => {
+    cards.forEach(c => {
+      const a = c.getBoundingClientRect(), b = first.get(c);
+      if (!b) return;
+      const dx = b.left - a.left, dy = b.top - a.top;
+      if (!dx && !dy) return;
+      c.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:"none"}],
+                {duration:420, easing:"cubic-bezier(.2,0,.2,1)"});
+    });
+  });
+}
+$("#lensOpts").addEventListener("click", e => {
+  const b = e.target.closest(".lens-opt");
+  if (b) applyLens(b.dataset.lens);
+});
+
+/* ─── rail position marker ──────────────────────────────────── */
+const railMark = $("#railMark");
+addEventListener("scroll", () => {
+  const h = document.body.scrollHeight - innerHeight;
+  railMark.style.top = (h > 0 ? clamp(scrollY / h, 0, 1) : 0) * (innerHeight - 2) + "px";
+}, {passive:true});
+
+/* ─── hero contour field (drawn once per theme) ─────────────── */
+const contour = $("#contour");
+function drawContour(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const w = contour.clientWidth || 900, h = contour.clientHeight || 600;
+  if (!w || !h) return;
+  contour.width = w * dpr; contour.height = h * dpr;
+  const g = contour.getContext("2d");
+  g.scale(dpr, dpr);
+  g.clearRect(0,0,w,h);
+
+  // value-noise field, sampled on a coarse grid, contoured by marching squares
+  const seed = 20260911;
+  let s = seed;
+  const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const GW = 42, GH = 30, P = [];
+  for (let i=0;i<(GW+1)*(GH+1);i++) P.push(rnd());
+  const at = (x,y) => P[clamp(y,0,GH)*(GW+1) + clamp(x,0,GW)];
+  const smooth = (x,y) => { // bilinear over the coarse lattice, twice, for soft blobs
+    let v = 0, amp = 1, tot = 0, f = 1;
+    for (let o=0;o<3;o++){
+      const gx = x*f, gy = y*f, x0 = Math.floor(gx), y0 = Math.floor(gy);
+      const tx = gx-x0, ty = gy-y0;
+      const a = at(x0,y0), b = at(x0+1,y0), c = at(x0,y0+1), d = at(x0+1,y0+1);
+      const ex = tx*tx*(3-2*tx), ey = ty*ty*(3-2*ty);
+      v += amp * ((a+(b-a)*ex) + ((c+(d-c)*ex) - (a+(b-a)*ex)) * ey);
+      tot += amp; amp *= .5; f *= 2.1;
+    }
+    return v/tot;
+  };
+  const CW = 150, CH = 110, F = new Float32Array((CW+1)*(CH+1));
+  for (let y=0;y<=CH;y++) for (let x=0;x<=CW;x++)
+    F[y*(CW+1)+x] = smooth(x/CW*8, y/CH*6);
+
+  const sx = w/CW, sy = h/CH;
+  const lvls = 11;
+  for (let L=1;L<lvls;L++){
+    const t = L/lvls;
+    const major = L % 4 === 0;
+    g.beginPath();
+    for (let y=0;y<CH;y++) for (let x=0;x<CW;x++){
+      const a=F[y*(CW+1)+x], b=F[y*(CW+1)+x+1], c=F[(y+1)*(CW+1)+x+1], d=F[(y+1)*(CW+1)+x];
+      const idx = (a>t?8:0)|(b>t?4:0)|(c>t?2:0)|(d>t?1:0);
+      if (idx===0||idx===15) continue;
+      const ip=(p,q,va,vb)=>{const m=(t-va)/(vb-va||1e-6);return [p[0]+(q[0]-p[0])*m, p[1]+(q[1]-p[1])*m];};
+      const TL=[x*sx,y*sy], TR=[(x+1)*sx,y*sy], BR=[(x+1)*sx,(y+1)*sy], BL=[x*sx,(y+1)*sy];
+      const E={ top:ip(TL,TR,a,b), right:ip(TR,BR,b,c), bottom:ip(BL,BR,d,c), left:ip(TL,BL,a,d) };
+      const seg = {1:[E.left,E.bottom],2:[E.bottom,E.right],3:[E.left,E.right],4:[E.top,E.right],
+        5:[E.top,E.left],6:[E.top,E.bottom],7:[E.top,E.left],8:[E.top,E.left],9:[E.top,E.bottom],
+        10:[E.top,E.right],11:[E.top,E.right],12:[E.left,E.right],13:[E.bottom,E.right],14:[E.left,E.bottom]}[idx];
+      if (!seg) continue;
+      g.moveTo(seg[0][0],seg[0][1]); g.lineTo(seg[1][0],seg[1][1]);
+    }
+    g.strokeStyle = major ? css("--hydro") : css("--rule");
+    g.globalAlpha = major ? .5 : .78;
+    g.lineWidth = major ? 1.15 : .7;
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+}
+if (!reduce) addEventListener("pointermove", e => {
+  const x = (e.clientX/innerWidth - .5), y = (e.clientY/innerHeight - .5);
+  contour.style.transform = `translate3d(${-x*22}px,${-y*14}px,0)`;
+}, {passive:true});
+
+/* ═══ INSTRUMENT 01 — broadphase ════════════════════════════ */
+const bp = (() => {
+  const cv = $("#bpCanvas"), g = cv.getContext("2d");
+  let W=0, H=0, dpr=1, N=560, mode="hash", showGrid=true, run=false;
+  const CELL = 34, R = 3.4, SEP = 9;
+  let px=[], py=[], vx=[], vy=[];
+  const buckets = new Map();
+  let checks=0, simMs=0, cells=0, fps=0, acc=0, frames=0, last=performance.now();
+  const mouse = {x:-1e4, y:-1e4};
+
+  function size(){
+    dpr = Math.min(devicePixelRatio||1, 2);
+    W = cv.clientWidth; H = 380;
+    cv.width = W*dpr; cv.height = H*dpr;
+    g.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function seed(n){
+    let s = 987654321;
+    const r = () => (s = (s*1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    px=[];py=[];vx=[];vy=[];
+    for (let i=0;i<n;i++){
+      px.push(r()*Math.max(W,1)); py.push(r()*H);
+      const a = r()*Math.PI*2, sp = .22 + r()*.5;
+      vx.push(Math.cos(a)*sp); vy.push(Math.sin(a)*sp);
+    }
+    N = n;
+  }
+  function step(){
+    const t0 = performance.now();
+    checks = 0;
+    for (let i=0;i<N;i++){
+      px[i]+=vx[i]; py[i]+=vy[i];
+      if (px[i]<R){px[i]=R;vx[i]=Math.abs(vx[i]);} if (px[i]>W-R){px[i]=W-R;vx[i]=-Math.abs(vx[i]);}
+      if (py[i]<R){py[i]=R;vy[i]=Math.abs(vy[i]);} if (py[i]>H-R){py[i]=H-R;vy[i]=-Math.abs(vy[i]);}
+      const dx = px[i]-mouse.x, dy = py[i]-mouse.y, d2 = dx*dx+dy*dy;
+      if (d2 < 8100 && d2 > 1){ const d = Math.sqrt(d2), f = (90-d)/90*.55; px[i]+=dx/d*f*4; py[i]+=dy/d*f*4; }
+    }
+    const sep = (i,j) => {
+      checks++;
+      const dx = px[j]-px[i], dy = py[j]-py[i], d2 = dx*dx+dy*dy;
+      if (d2 >= SEP*SEP || d2 === 0) return;
+      const d = Math.sqrt(d2), push = (SEP-d)/d*.5;
+      const ox = dx*push*.5, oy = dy*push*.5;
+      px[i]-=ox; py[i]-=oy; px[j]+=ox; py[j]+=oy;
+    };
+    if (mode === "naive"){
+      for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) sep(i,j);
+      cells = 0;
+    } else {
+      buckets.clear();
+      const cols = Math.ceil(W/CELL)+1;
+      for (let i=0;i<N;i++){
+        const k = ((py[i]/CELL)|0)*cols + ((px[i]/CELL)|0);
+        let b = buckets.get(k); if (!b) buckets.set(k, b=[]);
+        b.push(i);
+      }
+      cells = buckets.size;
+      for (const [k,b] of buckets){
+        for (let n=0;n<b.length;n++) for (let m=n+1;m<b.length;m++) sep(b[n],b[m]);
+        for (const off of [1, cols-1, cols, cols+1]){
+          const nb = buckets.get(k+off); if (!nb) continue;
+          for (const i of b) for (const j of nb) sep(i,j);
+        }
+      }
+    }
+    simMs = performance.now()-t0;
+  }
+  function draw(){
+    g.clearRect(0,0,W,H);
+    if (mode === "hash" && showGrid){
+      const cols = Math.ceil(W/CELL)+1;
+      g.strokeStyle = css("--rule-soft"); g.lineWidth = 1; g.globalAlpha = .85;
+      g.beginPath();
+      for (let x=0;x<=W;x+=CELL){ g.moveTo(x+.5,0); g.lineTo(x+.5,H); }
+      for (let y=0;y<=H;y+=CELL){ g.moveTo(0,y+.5); g.lineTo(W,y+.5); }
+      g.stroke();
+      g.fillStyle = css("--hydro"); g.globalAlpha = .10;
+      for (const [k,b] of buckets){
+        if (b.length < 2) continue;
+        const cx = (k % cols)*CELL, cy = ((k/cols)|0)*CELL;
+        g.fillRect(cx, cy, CELL, CELL);
+      }
+      g.globalAlpha = 1;
+    }
+    g.fillStyle = mode === "naive" ? css("--crit") : css("--signal");
+    for (let i=0;i<N;i++){ g.beginPath(); g.arc(px[i],py[i],R,0,6.2832); g.fill(); }
+  }
+  function loop(now){
+    if (!run) return;
+    step(); draw();
+    frames++; acc += now-last; last = now;
+    if (acc > 420){ fps = frames/acc*1000; frames=0; acc=0; report(); }
+    requestAnimationFrame(loop);
+  }
+  const fmt = n => n.toLocaleString("en-US");
+  function report(){
+    $("#roN").textContent = fmt(N);
+    $("#roChecks").textContent = fmt(checks);
+    $("#roMs").textContent = simMs.toFixed(1)+" ms";
+    const f = $("#roFps");
+    f.textContent = Math.round(fps)+" fps";
+    f.className = fps < 40 ? "hot" : fps < 55 ? "" : "cool";
+    $("#roCells").textContent = mode === "naive" ? "n/a" : fmt(cells);
+    $("#roChecks").className = mode === "naive" ? "hot" : "sig";
+  }
+  cv.addEventListener("pointermove", e => {
+    const r = cv.getBoundingClientRect();
+    mouse.x = e.clientX-r.left; mouse.y = e.clientY-r.top;
+  });
+  cv.addEventListener("pointerleave", () => { mouse.x = mouse.y = -1e4; });
+  function setMode(m){
+    mode = m;
+    $("#bpHash").setAttribute("aria-pressed", String(m==="hash"));
+    $("#bpNaive").setAttribute("aria-pressed", String(m==="naive"));
+  }
+  $("#bpHash").addEventListener("click", () => setMode("hash"));
+  $("#bpNaive").addEventListener("click", () => setMode("naive"));
+  $("#bpGrid").addEventListener("click", () => {
+    showGrid = !showGrid; $("#bpGrid").setAttribute("aria-pressed", String(showGrid));
+  });
+  $("#bpN").addEventListener("input", e => { $("#bpNv").textContent = e.target.value; seed(+e.target.value); });
+
+  return {
+    init(){ size(); seed(N); step(); draw(); report(); },
+    resize(){ size(); seed(N); },
+    start(){ if (run || reduce) return; run = true; last = performance.now(); requestAnimationFrame(loop); },
+    stop(){ run = false; }
+  };
+})();
+
+/* ═══ INSTRUMENT 02 — determinism ══════════════════════════ */
+const dt = (() => {
+  const cv = $("#dtCanvas"), g = cv.getContext("2d");
+  const SIM = 240, RATES = [30,60,120], PINS = 10, SPAN = 360; // sim steps
+  let W=0, H=250, dpr=1, seedN=10, mode="poll", shot=null;
+
+  function size(){
+    dpr = Math.min(devicePixelRatio||1,2);
+    W = cv.clientWidth; cv.width = W*dpr; cv.height = H*dpr;
+    g.setTransform(dpr,0,0,dpr,0,0);
+  }
+  // A shot is a set of pin-fall events on the simulation clock. Some land after a
+  // quiet gap — that gap is the whole bug.
+  function build(seed){
+    let s = seed >>> 0;
+    const r = () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296;
+    const ev = [];
+    let t = 12;
+    const n = 7 + Math.floor(r()*4);
+    for (let i=0;i<n;i++){
+      const dur = 10 + Math.floor(r()*14);
+      ev.push({start:t, end:t+dur});
+      const prevEnd = t + dur;
+      // Pins mostly keep each other moving, so the rack is busy end to end. Late in
+      // the shot it can fall briefly quiet and then start again — that flicker is
+      // the whole bug, so it only ever appears near the end.
+      t = (i >= n-4 && r() < .30)
+        ? prevEnd + 3 + Math.floor(r()*4)
+        : prevEnd - Math.floor(dur * (.2 + r()*.5));
+      if (t > SPAN-30) break;
+    }
+    const moving = step => ev.some(e => step >= e.start && step <= e.end);
+    const down = step => ev.filter(e => e.end <= step).length;
+    const trueEnd = ev.length ? ev[ev.length-1].end : 0;
+    const rows = RATES.map(rate => {
+      const every = Math.round(SIM/rate);
+      let stop = SPAN;
+      const live = ev.length ? ev[0].start : 0;
+      if (mode === "poll"){
+        for (let st=every; st<=SPAN; st+=every){ if (st >= live && !moving(st)){ stop = st; break; } }
+      } else {
+        for (let st=1; st<=SPAN; st++){
+          if (!moving(st) && st > trueEnd){ stop = st; break; }
+        }
+      }
+      return {rate, every, stop, pins:down(stop)};
+    });
+    return {ev, rows, trueScore:down(SPAN), trueEnd, seed};
+  }
+  function render(){
+    g.clearRect(0,0,W,H);
+    const padL = 16, padR = 16, top = 26, laneH = 36, trackW = W-padL-padR;
+    const X = st => padL + st/SPAN*trackW;
+
+    g.font = "500 9.5px "+css("--f-mono");
+    g.textBaseline = "middle";
+
+    // motion band
+    g.fillStyle = css("--text-faint");
+    g.fillText("PIN MOTION ON THE SIMULATION CLOCK (240 Hz)", padL, 12);
+    g.fillStyle = css("--surface-2");
+    g.fillRect(padL, top, trackW, 18);
+    g.fillStyle = css("--signal");
+    for (const e of shot.ev) g.fillRect(X(e.start), top, Math.max(X(e.end)-X(e.start),1.5), 18);
+
+    // quiet-gap annotations
+    g.strokeStyle = css("--hydro"); g.setLineDash([2,3]); g.lineWidth = 1;
+    for (let i=0;i<shot.ev.length-1;i++){
+      const gap = shot.ev[i+1].start - shot.ev[i].end;
+      if (gap > 2 && gap < 9){
+        const mx = X((shot.ev[i].end + shot.ev[i+1].start)/2);
+        g.beginPath(); g.moveTo(mx, top+18); g.lineTo(mx, top+26); g.stroke();
+        g.fillStyle = css("--hydro");
+        g.fillText("quiet", mx-11, top+32);
+      }
+    }
+    g.setLineDash([]);
+
+    // one lane per display rate
+    shot.rows.forEach((row,i) => {
+      const y = top + 52 + i*laneH;
+      g.fillStyle = css("--text-dim");
+      g.fillText(row.rate+" Hz", padL, y);
+      const lx = padL+46, lw = trackW-46;
+      g.strokeStyle = css("--rule"); g.lineWidth = 1;
+      g.beginPath(); g.moveTo(lx, y+.5); g.lineTo(padL+trackW, y+.5); g.stroke();
+      // poll ticks
+      g.strokeStyle = css("--rule");
+      g.beginPath();
+      for (let st=row.every; st<=SPAN; st+=row.every){
+        const x = padL + st/SPAN*trackW;
+        if (x < lx) continue;
+        g.moveTo(x, y-4); g.lineTo(x, y+4);
+      }
+      g.stroke();
+      // stop marker
+      const sx = X(row.stop);
+      const wrong = row.pins !== shot.trueScore;
+      g.strokeStyle = wrong ? css("--crit") : css("--good");
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(sx, y-11); g.lineTo(sx, y+11); g.stroke();
+      g.fillStyle = wrong ? css("--crit") : css("--good");
+      g.fillText(row.pins+" pins", Math.min(sx+6, W-padR-42), y-15);
+    });
+  }
+  function table(){
+    const body = $("#dtBody");
+    body.innerHTML = "";
+    for (const row of shot.rows){
+      const wrong = row.pins !== shot.trueScore;
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        `<td>${row.rate} Hz</td>` +
+        `<td>every ${row.every} sim steps</td>` +
+        `<td>step ${row.stop === SPAN ? "—" : row.stop}</td>` +
+        `<td>${row.pins} / ${PINS}</td>` +
+        `<td class="sc ${wrong?"bad":"ok"}">${row.pins * 10}</td>` +
+        `<td><span class="pill ${wrong?"bad":"ok"}">${wrong?"divergent":"correct"}</span></td>`;
+      body.appendChild(tr);
+    }
+    const scores = new Set(shot.rows.map(r => r.pins));
+    $("#roSeed").textContent = "#"+shot.seed;
+    $("#roTrue").textContent = shot.trueScore*10;
+    const ag = $("#roAgree");
+    ag.textContent = scores.size === 1 ? "identical" : scores.size+" answers";
+    ag.className = scores.size === 1 ? "cool" : "hot";
+  }
+  function refresh(){ shot = build(seedN); size(); render(); table(); }
+  function setMode(m){
+    mode = m;
+    $("#dtPoll").setAttribute("aria-pressed", String(m==="poll"));
+    $("#dtLatch").setAttribute("aria-pressed", String(m==="latch"));
+    refresh();
+  }
+  $("#dtPoll").addEventListener("click", () => setMode("poll"));
+  $("#dtLatch").addEventListener("click", () => setMode("latch"));
+  $("#dtNext").addEventListener("click", () => { seedN = (seedN*1103515245 + 12345) & 0xffffff; refresh(); });
+  $("#dtSweep").addEventListener("click", () => {
+    let bad = 0, s = 1000;
+    for (let i=0;i<250;i++){
+      s = (s*1664525 + 1013904223) >>> 0;
+      const sh = build(s);
+      if (new Set(sh.rows.map(r => r.pins)).size > 1) bad++;
+    }
+    const el = $("#roSweep");
+    el.textContent = bad + " / 250";
+    el.className = bad ? "hot" : "cool";
+  });
+  return { init(){ refresh(); }, resize(){ if (shot){ size(); render(); } } };
+})();
+
+/* ═══ INSTRUMENT 03 — transport ════════════════════════════ */
+const tx = (() => {
+  const cv = $("#txCanvas"), g = cv.getContext("2d");
+  let W=0, H=300, dpr=1, run=false;
+  let loss=.12, rtt=140, t=0, seq=0, nextSend=0;
+  const inflight = [];           // {seq, at, lane, lost, retryAt}
+  let relOut=null, relQueue=[], relHoldSince=0, relExpect=0;
+  let unrelOut=null, unrelSeen=-1, unrelLastAt=0;
+  let stalls=0, worstFreeze=0, worstGap=0, dropped=0, stale=0;
+  const trail = [];
+
+  function size(){
+    dpr = Math.min(devicePixelRatio||1,2);
+    W = cv.clientWidth; cv.width = W*dpr; cv.height = H*dpr;
+    g.setTransform(dpr,0,0,dpr,0,0);
+  }
+  const hostPos = ms => {
+    const a = ms/1000;
+    return { x: .5 + .34*Math.sin(a*.9), y: .5 + .3*Math.sin(a*1.7+1.1) };
+  };
+  function send(now){
+    const p = hostPos(now);
+    seq++;
+    for (const lane of ["rel","unrel"]){
+      const lost = Math.random() < loss;
+      if (lost && lane === "unrel") dropped++;
+      inflight.push({seq, lane, pos:p, arrive: now + rtt/2 + (lost ? rtt : 0), lost});
+    }
+  }
+  function deliver(now){
+    for (let i=inflight.length-1;i>=0;i--){
+      const pk = inflight[i];
+      if (now < pk.arrive) continue;
+      inflight.splice(i,1);
+      if (pk.lane === "unrel"){
+        if (pk.lost) continue;                       // maxRetransmits:0 — simply gone
+        if (pk.seq <= unrelSeen){ stale++; continue; } // receiver dedupes on sequence
+        unrelSeen = pk.seq; unrelOut = pk.pos;
+        const gap = now - unrelLastAt; if (unrelLastAt && gap > worstGap) worstGap = gap;
+        unrelLastAt = now;
+      } else {
+        relQueue.push(pk);                            // ordered: must wait its turn
+      }
+    }
+    relQueue.sort((a,b) => a.seq - b.seq);
+    let moved = false;
+    while (relQueue.length && relQueue[0].seq === relExpect + 1){
+      const pk = relQueue.shift();
+      relExpect = pk.seq; relOut = pk.pos; moved = true;
+    }
+    if (relQueue.length){                             // head-of-line blocked
+      if (!relHoldSince){ relHoldSince = now; stalls++; }
+      const held = now - relHoldSince;
+      if (held > worstFreeze) worstFreeze = held;
+    } else if (moved){ relHoldSince = 0; }
+  }
+  function draw(now){
+    g.clearRect(0,0,W,H);
+    const padL=14, padR=14, laneW = W-padL-padR;
+    const boxH = 104, gapY = 18, top = 46;
+
+    g.font = "500 9.5px "+css("--f-mono"); g.textBaseline = "middle";
+
+    // wire: packets in flight
+    g.fillStyle = css("--text-faint");
+    g.fillText("30 Hz SNAPSHOT STREAM  ·  seq " + seq, padL, 13);
+    g.strokeStyle = css("--rule"); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(padL, 28.5); g.lineTo(W-padR, 28.5); g.stroke();
+    for (const pk of inflight){
+      if (pk.lane !== "unrel") continue;
+      const prog = clamp(1 - (pk.arrive-now)/(rtt/2 + (pk.lost?rtt:0)), 0, 1);
+      const x = padL + prog*laneW;
+      g.fillStyle = pk.lost ? css("--crit") : css("--hydro");
+      g.fillRect(x-1.5, 24, 3, 9);
+    }
+
+    const lanes = [
+      {label:"ordered · reliable", sub:"retransmits, delivers in order", pos:relOut,
+       held:relQueue.length>0, color:css("--crit")},
+      {label:"unordered · unreliable", sub:"maxRetransmits:0 — newest wins", pos:unrelOut,
+       held:false, color:css("--signal")}
+    ];
+    lanes.forEach((L,i) => {
+      const y = top + i*(boxH+gapY);
+      g.strokeStyle = css("--rule"); g.lineWidth = 1;
+      g.strokeRect(padL+.5, y+.5, laneW-1, boxH-1);
+      g.fillStyle = css("--text-dim"); g.fillText(L.label.toUpperCase(), padL+10, y+14);
+      g.fillStyle = css("--text-faint"); g.fillText(L.sub, padL+10+g.measureText(L.label.toUpperCase()).width+14, y+14);
+
+      // host ghost
+      const hp = hostPos(now);
+      g.fillStyle = css("--text-faint"); g.globalAlpha = .45;
+      g.beginPath(); g.arc(padL + hp.x*(laneW), y + 22 + hp.y*(boxH-44), 5, 0, 6.2832); g.fill();
+      g.globalAlpha = 1;
+
+      if (L.pos){
+        const x = padL + L.pos.x*laneW, yy = y + 22 + L.pos.y*(boxH-44);
+        g.strokeStyle = L.color; g.lineWidth = 1;
+        g.beginPath(); g.arc(x, yy, 9, 0, 6.2832); g.stroke();
+        g.fillStyle = L.color;
+        g.beginPath(); g.arc(x, yy, 4.5, 0, 6.2832); g.fill();
+      }
+      if (L.held){
+        g.fillStyle = css("--crit");
+        g.fillText("HEAD-OF-LINE BLOCKED · " + relQueue.length + " QUEUED", padL+10, y+boxH-13);
+      }
+    });
+  }
+  function loop(now){
+    if (!run) return;
+    t = now;
+    if (now >= nextSend){ send(now); nextSend = now + 1000/30; }
+    deliver(now);
+    draw(now);
+    $("#roStall").textContent = stalls;
+    $("#roFreeze").textContent = Math.round(worstFreeze)+" ms";
+    $("#roGap").textContent = Math.round(worstGap)+" ms";
+    $("#roDrop").textContent = dropped;
+    $("#roStale").textContent = stale;
+    requestAnimationFrame(loop);
+  }
+  $("#txLoss").addEventListener("input", e => { loss = +e.target.value/100; $("#txLossV").textContent = e.target.value+"%"; });
+  $("#txRtt").addEventListener("input", e => { rtt = +e.target.value; $("#txRttV").textContent = e.target.value+"ms"; });
+  $("#txReset").addEventListener("click", () => {
+    stalls=worstFreeze=worstGap=dropped=stale=0; relHoldSince=0;
+  });
+  return {
+    init(){ size(); draw(performance.now()); },
+    resize(){ size(); },
+    start(){ if (run || reduce) return; run = true; nextSend = performance.now(); requestAnimationFrame(loop); },
+    stop(){ run = false; }
+  };
+})();
+
+/* ─── only run what's on screen ─────────────────────────────── */
+const io = new IntersectionObserver(entries => {
+  for (const e of entries){
+    const inst = e.target.id === "i1" ? bp : e.target.id === "i3" ? tx : null;
+    if (!inst) continue;
+    e.isIntersecting ? inst.start() : inst.stop();
+  }
+}, {rootMargin:"120px"});
+["#i1","#i3"].forEach(s => io.observe($(s)));
+
+/* ─── command palette ───────────────────────────────────────── */
+const CMDS = [
+  {t:"Go to — Record",        k:"work experience meti timeline", run:() => go("#work")},
+  {t:"Go to — Selected work", k:"projects portfolio",            run:() => go("#projects")},
+  {t:"Go to — Toolkit",       k:"skills stack languages",        run:() => go("#toolkit")},
+  {t:"Go to — Contact",       k:"email hire reach available",    run:() => go("#contact")},
+  {t:"Instrument 01 — Broadphase",  k:"spatial hash collision geofighters", run:() => go("#i1")},
+  {t:"Instrument 02 — Determinism", k:"carry bowling framerate bug",        run:() => go("#i2")},
+  {t:"Instrument 03 — Transport",   k:"webrtc sctp packet loss netcode",    run:() => go("#i3")},
+  {t:"التبديل إلى العربية",    k:"arabic rtl arabe",             tag:"A", run:() => setArabic(root.dir !== "rtl")},
+  {t:"Toggle chart paper / ink", k:"theme dark light",           tag:"T", run:() => { root.dataset.theme = isLight()?"dark":"light"; repaint(); }},
+  ...Object.entries(LENS_LABEL).map(([k,v]) => ({
+    t:"Lens — "+v, k:"lens filter role "+k, tag:"LENS",
+    run:() => { applyLens(k); go("#projects"); }
+  })),
+  {t:"Email Marwan", k:"contact mail reach hire", tag:"MAIL", run:() => location.href = "mailto:MarwanMo11@aucegypt.edu"}
+];
+function go(sel){ $(sel).scrollIntoView({behavior: reduce ? "auto" : "smooth", block:"start"}); }
+
+const pal = $("#pal"), palInput = $("#palInput"), palList = $("#palList");
+let palItems = [], palIdx = 0;
+function palRender(q){
+  const s = q.trim().toLowerCase();
+  palItems = !s ? CMDS.slice(0,9)
+    : CMDS.filter(c => (c.t+" "+c.k).toLowerCase().includes(s)).slice(0,9);
+  palIdx = 0;
+  palList.innerHTML = "";
+  palItems.forEach((c,i) => {
+    const li = document.createElement("li");
+    li.setAttribute("role","option");
+    li.setAttribute("aria-selected", String(i===0));
+    li.innerHTML = `<span>${c.t}</span>${c.tag?`<small>${c.tag}</small>`:""}`;
+    li.addEventListener("click", () => { c.run(); palClose(); });
+    li.addEventListener("pointerenter", () => palSel(i));
+    palList.appendChild(li);
+  });
+}
+function palSel(i){
+  palIdx = (i + palItems.length) % (palItems.length || 1);
+  $$("#palList li").forEach((li,n) => li.setAttribute("aria-selected", String(n===palIdx)));
+  const el = palList.children[palIdx]; if (el) el.scrollIntoView({block:"nearest"});
+}
+function palOpen(){ pal.hidden = false; palInput.value = ""; palRender(""); palInput.focus(); }
+function palClose(){ pal.hidden = true; }
+$("#btnPal").addEventListener("click", palOpen);
+pal.addEventListener("click", e => { if (e.target === pal) palClose(); });
+palInput.addEventListener("input", e => palRender(e.target.value));
+palInput.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown"){ e.preventDefault(); palSel(palIdx+1); }
+  else if (e.key === "ArrowUp"){ e.preventDefault(); palSel(palIdx-1); }
+  else if (e.key === "Enter"){ e.preventDefault(); const c = palItems[palIdx]; if (c){ c.run(); palClose(); } }
+  else if (e.key === "Escape"){ palClose(); }
+});
+addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){ e.preventDefault(); palOpen(); return; }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "k"){ e.preventDefault(); palOpen(); }
+  else if (k === "a"){ setArabic(root.dir !== "rtl"); }
+  else if (k === "t"){ root.dataset.theme = isLight() ? "dark" : "light"; repaint(); }
+  else if (k === "escape"){ palClose(); }
+});
+
+/* ─── paint / resize ────────────────────────────────────────── */
+function repaint(){ drawContour(); bp.resize(); dt.resize(); tx.resize(); }
+let rt;
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(repaint, 160); });
+
+drawContour();
+bp.init(); dt.init(); tx.init();
+applyLens("all");
+})();
+</script>
