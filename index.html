@@ -216,6 +216,10 @@ h1 .sur{display:block; color:var(--signal)}
   padding-top:4px;flex-wrap:wrap}
 .card-foot a{color:var(--hydro);text-decoration:none;border-bottom:1px solid var(--hydro-soft)}
 .card-foot a:hover{border-color:var(--hydro)}
+/* A link you can act on outranks a link you can only read: the playable
+   build gets the signal colour, the repository stays chart cyan. */
+.card-foot a.play{color:var(--signal);border-bottom-color:var(--signal-soft);font-weight:500}
+.card-foot a.play:hover{border-color:var(--signal)}
 .card-foot .yr{color:var(--text-faint);margin-inline-start:auto}
 
 /* ── instrument panels ───────────────────────────────────────── */
@@ -494,7 +498,7 @@ footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
       <p class="tag">TypeScript · Three.js · Svelte 5 · Rapier WASM · miniplex ECS · WebRTC</p>
       <p>A browser-native co-op 3D shooter, <b class="fig">45k lines</b> of it. Host-star WebRTC topology with 30 Hz snapshots on <b>unreliable, unordered</b> SCTP channels — see Instrument 02. TURN on :443/TCP after finding CGNAT is the norm on Egyptian and UAE mobile carriers, which is exactly the Capacitor build's audience.</p>
       <p>Frame limiter skips frames <em>before</em> any work while the clock keeps accumulating, so the simulation stays real-time: <b class="fig">160 → 59 fps</b>.</p>
-      <div class="card-foot"><a href="https://github.com/MarwanMoh11/Geo-FightersV2" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2025–26</span></div>
+      <div class="card-foot"><a class="play" href="https://marwanmoh11.github.io/Geo-FightersV2/" target="_blank" rel="noopener" data-ar="العب الآن ↗">Play it ↗</a><a href="https://github.com/MarwanMoh11/Geo-FightersV2" target="_blank" rel="noopener">GitHub ↗</a><span class="yr">2025–26</span></div>
     </article>
 
     <article class="card" data-tags="rt" data-rank-rt="2" data-rank-backend="6" data-rank-ai="7">
@@ -1280,6 +1284,8 @@ const CMDS = [
   {t:"Go to — Toolkit",       k:"skills stack languages",        run:() => go("#toolkit")},
   {t:"Go to — Contact",       k:"email hire reach available",    run:() => go("#contact")},
   {t:"Download the CV", k:"cv resume pdf download hire", tag:"PDF", run:() => window.open("cv.pdf","_blank","noopener")},
+  {t:"Play GeoFighters", k:"game demo try play geofighters shooter", tag:"PLAY",
+   run:() => window.open("https://marwanmoh11.github.io/Geo-FightersV2/","_blank","noopener")},
   {t:"Instrument 01 — Broadphase",  k:"spatial hash collision geofighters", run:() => go("#i1")},
   {t:"Instrument 02 — Determinism", k:"carry bowling framerate bug",        run:() => go("#i2")},
   {t:"Instrument 03 — Transport",   k:"webrtc sctp packet loss netcode",    run:() => go("#i3")},
