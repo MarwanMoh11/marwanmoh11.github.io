@@ -960,7 +960,7 @@ const bp = (() => {
 
   return {
     init(){ size(); seed(N); step(); draw(); report(); },
-    resize(){ size(); seed(N); },
+    resize(){ size(); seed(N); step(); draw(); report(); },
     start(){ if (run || reduce) return; run = true; last = performance.now(); requestAnimationFrame(loop); },
     stop(){ run = false; }
   };
@@ -1245,7 +1245,7 @@ const tx = (() => {
   });
   return {
     init(){ size(); draw(performance.now()); },
-    resize(){ size(); },
+    resize(){ size(); draw(performance.now()); },
     start(){ if (run || reduce) return; run = true; nextSend = performance.now(); requestAnimationFrame(loop); },
     stop(){ run = false; }
   };
