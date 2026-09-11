@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Marwan Abudaif — software engineer at METI and Computer Engineering senior at AUC. Two shipped geospatial platforms, a solo-built Laravel + Next.js client portal, and real-time netcode. Graduating December 2026.">
 <title>Marwan Abudaif</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +110,8 @@ a{color:inherit}
 }
 .rail-btn:hover{color:var(--signal);border-color:var(--signal)}
 .rail-btn[aria-pressed="true"]{background:var(--signal);color:#0A1518;border-color:var(--signal)}
+.rail-cv{text-decoration:none;color:var(--signal);border-color:var(--signal-soft);letter-spacing:.06em}
+.rail-cv:hover{background:var(--signal);color:#0A1518;border-color:var(--signal)}
 
 /* ── shell ───────────────────────────────────────────────────── */
 .shell{margin-inline-start:var(--rail); max-width:var(--maxw); padding-inline:clamp(20px,4vw,64px)}
@@ -312,12 +320,15 @@ footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
   .contour{transition:none}
 }
 </style>
+</head>
 
+<body>
 <a class="skip" href="#main">Skip to content</a>
 
 <nav class="rail" aria-label="Page controls">
   <div class="rail-ticks"></div>
   <div class="rail-mark" id="railMark" style="top:0"></div>
+  <a class="rail-btn rail-cv" href="cv.pdf" target="_blank" rel="noopener" title="Download the CV — one page, PDF">CV</a>
   <button class="rail-btn" id="btnPal" style="font-size:10px" title="Command palette — press K">⌘K</button>
   <button class="rail-btn" id="btnAr" aria-pressed="false" title="العربية — switch the interface to Arabic (A)">ع</button>
   <button class="rail-btn" id="btnTheme" title="Toggle chart paper / bathymetric ink (T)">◐</button>
@@ -667,10 +678,11 @@ footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
         <a href="mailto:MarwanMo11@aucegypt.edu">MarwanMo11@aucegypt.edu <small>Email</small></a>
         <a href="https://www.linkedin.com/in/marwan-abudaif-088567283/" target="_blank" rel="noopener">/in/marwan-abudaif <small>LinkedIn</small></a>
         <a href="https://github.com/MarwanMoh11" target="_blank" rel="noopener">MarwanMoh11 <small>GitHub</small></a>
+        <a href="cv.pdf" target="_blank" rel="noopener" data-ar="cv.pdf &lt;small&gt;السيرة الذاتية — صفحة واحدة&lt;/small&gt;">cv.pdf <small>CV — one page</small></a>
       </div>
     </div>
     <div>
-      <p class="standfirst" style="font-size:16px;margin-top:0">Work authorization for both Egypt and the UAE, with a full military-service exemption — no visa dependency in either market. CV available on request.</p>
+      <p class="standfirst" style="font-size:16px;margin-top:0">Work authorization for both Egypt and the UAE, with a full military-service exemption — no visa dependency in either market. The CV is one page and sits at <a href="cv.pdf" target="_blank" rel="noopener" style="color:var(--signal)">cv.pdf</a> — longer versions for research or referral on request.</p>
     </div>
   </div>
 </section>
@@ -1267,6 +1279,7 @@ const CMDS = [
   {t:"Go to — Selected work", k:"projects portfolio",            run:() => go("#projects")},
   {t:"Go to — Toolkit",       k:"skills stack languages",        run:() => go("#toolkit")},
   {t:"Go to — Contact",       k:"email hire reach available",    run:() => go("#contact")},
+  {t:"Download the CV", k:"cv resume pdf download hire", tag:"PDF", run:() => window.open("cv.pdf","_blank","noopener")},
   {t:"Instrument 01 — Broadphase",  k:"spatial hash collision geofighters", run:() => go("#i1")},
   {t:"Instrument 02 — Determinism", k:"carry bowling framerate bug",        run:() => go("#i2")},
   {t:"Instrument 03 — Transport",   k:"webrtc sctp packet loss netcode",    run:() => go("#i3")},
@@ -1335,3 +1348,5 @@ bp.init(); dt.init(); tx.init();
 applyLens("all");
 })();
 </script>
+</body>
+</html>
