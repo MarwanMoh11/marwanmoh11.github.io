@@ -39,6 +39,7 @@
 
   --rail:74px;
   --maxw:1180px;
+  overflow-x:hidden;
   --gap:clamp(56px,7vw,104px);
   color-scheme:dark;
 }
@@ -94,6 +95,7 @@ a{color:inherit}
           mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);}
 .rail-mark{
   position:absolute; inset-inline-start:0; width:100%; height:1px; background:var(--signal);
+  top:calc(var(--sp,0) * (100% - 2px));
   transition:top .28s cubic-bezier(.4,0,.2,1); z-index:2;
 }
 .rail-mark::after{content:"";position:absolute;inset-inline-end:-4px;top:-3px;width:7px;height:7px;
@@ -131,7 +133,7 @@ h3{font-size:19px; letter-spacing:-.01em; font-weight:600}
 .sec-head{margin-bottom:44px}
 
 /* ── hero ────────────────────────────────────────────────────── */
-.hero{position:relative; padding-block:clamp(56px,9vh,92px) var(--gap)}
+.hero{position:relative; overflow:clip; padding-block:clamp(56px,9vh,92px) var(--gap)}
 .contour{position:absolute; inset:-10% -40% auto -10%; height:130%; width:150%;
   z-index:0; pointer-events:none; opacity:.5;
   -webkit-mask-image:radial-gradient(120% 90% at 30% 40%,#000 20%,transparent 78%);
@@ -318,6 +320,65 @@ footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
   .cta{grid-template-columns:1fr}
   .rail-coord{display:none}
   body{font-size:16px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
+
+/* ── phones: the rail becomes a thumb-reachable bottom bar, and the
+      scroll marker becomes the progress line sitting on top of it. ── */
+@media (max-width:720px){
+  :root{--rail:0px; --gap:clamp(40px,8vw,64px)}
+  .rail{
+    top:auto; bottom:0; inset-inline:0; width:auto; height:54px;
+    flex-direction:row; align-items:center; justify-content:center; gap:10px;
+    padding:0 14px; border-inline-end:0; border-top:1px solid var(--rule);
+    background:color-mix(in srgb,var(--ink) 94%,transparent); backdrop-filter:blur(10px);
+  }
+  .rail-ticks{display:none}
+  .rail-mark{
+    top:auto; bottom:100%; inset-inline-start:0; height:2px;
+    width:calc(var(--sp,0) * 100%); transition:width .1s linear;
+  }
+  .rail-mark::after{display:none}
+  .rail-btn{width:48px;height:40px}
+  body{padding-bottom:54px}
+
+  /* one scrollable row of role chips instead of a six-line block */
+  .lens{padding-inline:0; gap:0; flex-wrap:nowrap}
+  .lens-label{display:none}
+  .lens-opts{
+    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; min-width:0;
+    padding-inline:clamp(20px,4vw,64px); -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+  }
+  .lens-opts::-webkit-scrollbar{display:none}
+  .lens-opt{flex:0 0 auto}
+
+  /* vertical dividers read wrong once these stack */
+  .facts{grid-template-columns:1fr}
+  .fact{border-inline-start:0; border-top:1px solid var(--rule)}
+  .fact:first-child{border-top:0}
+  .readouts{grid-template-columns:repeat(2,1fr)}
+  .ro{border-inline-start:0; border-top:1px solid var(--rule-soft)}
+  .ro:nth-child(odd){border-inline-end:1px solid var(--rule-soft)}
+
+  .inst-ctl{margin-inline-start:0; width:100%; gap:6px}
+  .irange{flex:1 1 100%}
+  .irange input{flex:1; width:auto}
+  .ship{grid-template-columns:1fr; gap:6px}
+  .ibtn{padding:10px 14px}
+  .lens-opt{padding:11px 15px}
+  .links a{padding:14px 0}
+  .grid{grid-template-columns:1fr}
+  h1{letter-spacing:-.035em}
+  footer{flex-direction:column; gap:6px}
+}
+
+/* Coarse pointers need targets you can actually hit. */
+@media (hover:none){
+  .ibtn{padding:9px 13px}
+  .lens-opt{padding:9px 14px}
+  .links a{padding:13px 0}
+  .cvrow{padding:14px 15px}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}
@@ -331,7 +392,7 @@ footer{margin-inline-start:var(--rail);border-top:1px solid var(--rule-soft);
 
 <nav class="rail" aria-label="Page controls">
   <div class="rail-ticks"></div>
-  <div class="rail-mark" id="railMark" style="top:0"></div>
+  <div class="rail-mark" id="railMark"></div>
   <a class="rail-btn rail-cv" href="cv.pdf" target="_blank" rel="noopener" title="Download the CV — one page, PDF">CV</a>
   <button class="rail-btn" id="btnPal" style="font-size:10px" title="Command palette — press K">⌘K</button>
   <button class="rail-btn" id="btnAr" aria-pressed="false" title="العربية — switch the interface to Arabic (A)">ع</button>
@@ -783,8 +844,8 @@ $("#lensOpts").addEventListener("click", e => {
 /* ─── rail position marker ──────────────────────────────────── */
 const railMark = $("#railMark");
 addEventListener("scroll", () => {
-  const h = document.body.scrollHeight - innerHeight;
-  railMark.style.top = (h > 0 ? clamp(scrollY / h, 0, 1) : 0) * (innerHeight - 2) + "px";
+  const h = document.documentElement.scrollHeight - innerHeight;
+  root.style.setProperty("--sp", h > 0 ? clamp(scrollY / h, 0, 1) : 0);
 }, {passive:true});
 
 /* ─── hero contour field (drawn once per theme) ─────────────── */
@@ -864,9 +925,12 @@ const bp = (() => {
 
   function size(){
     dpr = Math.min(devicePixelRatio||1, 2);
-    W = cv.clientWidth; H = 380;
+    W = cv.clientWidth; if (!W) return false;
+    H = W < 520 ? 300 : 380;
     cv.width = W*dpr; cv.height = H*dpr;
+    cv.style.height = H + "px";
     g.setTransform(dpr,0,0,dpr,0,0);
+    return true;
   }
   function seed(n){
     let s = 987654321;
@@ -975,8 +1039,12 @@ const bp = (() => {
   $("#bpN").addEventListener("input", e => { $("#bpNv").textContent = e.target.value; seed(+e.target.value); });
 
   return {
-    init(){ size(); seed(N); step(); draw(); report(); },
-    resize(){ size(); seed(N); step(); draw(); report(); },
+    init(){
+      if (!size()) return;
+      if (W < 520){ N = 280; $("#bpN").value = 280; $("#bpNv").textContent = 280; }
+      seed(N); step(); draw(); report();
+    },
+    resize(){ if (!size()) return; seed(N); step(); draw(); report(); },
     start(){ if (run || reduce) return; run = true; last = performance.now(); requestAnimationFrame(loop); },
     stop(){ run = false; }
   };
@@ -990,8 +1058,11 @@ const dt = (() => {
 
   function size(){
     dpr = Math.min(devicePixelRatio||1,2);
-    W = cv.clientWidth; cv.width = W*dpr; cv.height = H*dpr;
+    W = cv.clientWidth; if (!W) return false;
+    cv.width = W*dpr; cv.height = H*dpr;
+    cv.style.height = H + "px";
     g.setTransform(dpr,0,0,dpr,0,0);
+    return true;
   }
   // A shot is a set of pin-fall events on the simulation clock. Some land after a
   // quiet gap — that gap is the whole bug.
@@ -1041,7 +1112,8 @@ const dt = (() => {
 
     // motion band
     g.fillStyle = css("--text-faint");
-    g.fillText("PIN MOTION ON THE SIMULATION CLOCK (240 Hz)", padL, 12);
+    g.fillText(W < 430 ? "PIN MOTION · 240 Hz SIM CLOCK"
+                : "PIN MOTION ON THE SIMULATION CLOCK (240 Hz)", padL, 12);
     g.fillStyle = css("--surface-2");
     g.fillRect(padL, top, trackW, 18);
     g.fillStyle = css("--signal");
@@ -1109,7 +1181,7 @@ const dt = (() => {
     ag.textContent = scores.size === 1 ? "identical" : scores.size+" answers";
     ag.className = scores.size === 1 ? "cool" : "hot";
   }
-  function refresh(){ shot = build(seedN); size(); render(); table(); }
+  function refresh(){ shot = build(seedN); table(); if (size()) render(); }
   function setMode(m){
     mode = m;
     $("#dtPoll").setAttribute("aria-pressed", String(m==="poll"));
@@ -1130,7 +1202,7 @@ const dt = (() => {
     el.textContent = bad + " / 250";
     el.className = bad ? "hot" : "cool";
   });
-  return { init(){ refresh(); }, resize(){ if (shot){ size(); render(); } } };
+  return { init(){ refresh(); }, resize(){ if (shot && size()) render(); } };
 })();
 
 /* ═══ INSTRUMENT 03 — transport ════════════════════════════ */
@@ -1146,8 +1218,12 @@ const tx = (() => {
 
   function size(){
     dpr = Math.min(devicePixelRatio||1,2);
-    W = cv.clientWidth; cv.width = W*dpr; cv.height = H*dpr;
+    W = cv.clientWidth; if (!W) return false;
+    H = W < 520 ? 260 : 300;
+    cv.width = W*dpr; cv.height = H*dpr;
+    cv.style.height = H + "px";
     g.setTransform(dpr,0,0,dpr,0,0);
+    return true;
   }
   const hostPos = ms => {
     const a = ms/1000;
@@ -1192,13 +1268,13 @@ const tx = (() => {
   function draw(now){
     g.clearRect(0,0,W,H);
     const padL=14, padR=14, laneW = W-padL-padR;
-    const boxH = 104, gapY = 18, top = 46;
+    const narrow = W < 430, boxH = narrow ? 84 : 104, gapY = narrow ? 14 : 18, top = 46;
 
     g.font = "500 9.5px "+css("--f-mono"); g.textBaseline = "middle";
 
     // wire: packets in flight
     g.fillStyle = css("--text-faint");
-    g.fillText("30 Hz SNAPSHOT STREAM  ·  seq " + seq, padL, 13);
+    g.fillText((narrow ? "SNAPSHOTS · seq " : "30 Hz SNAPSHOT STREAM  ·  seq ") + seq, padL, 13);
     g.strokeStyle = css("--rule"); g.lineWidth = 1;
     g.beginPath(); g.moveTo(padL, 28.5); g.lineTo(W-padR, 28.5); g.stroke();
     for (const pk of inflight){
@@ -1220,7 +1296,10 @@ const tx = (() => {
       g.strokeStyle = css("--rule"); g.lineWidth = 1;
       g.strokeRect(padL+.5, y+.5, laneW-1, boxH-1);
       g.fillStyle = css("--text-dim"); g.fillText(L.label.toUpperCase(), padL+10, y+14);
-      g.fillStyle = css("--text-faint"); g.fillText(L.sub, padL+10+g.measureText(L.label.toUpperCase()).width+14, y+14);
+      if (!narrow){
+        g.fillStyle = css("--text-faint");
+        g.fillText(L.sub, padL+10+g.measureText(L.label.toUpperCase()).width+14, y+14);
+      }
 
       // host ghost
       const hp = hostPos(now);
@@ -1237,7 +1316,7 @@ const tx = (() => {
       }
       if (L.held){
         g.fillStyle = css("--crit");
-        g.fillText("HEAD-OF-LINE BLOCKED · " + relQueue.length + " QUEUED", padL+10, y+boxH-13);
+        g.fillText((narrow ? "BLOCKED · " : "HEAD-OF-LINE BLOCKED · ") + relQueue.length + " QUEUED", padL+10, y+boxH-13);
       }
     });
   }
@@ -1260,8 +1339,8 @@ const tx = (() => {
     stalls=worstFreeze=worstGap=dropped=stale=0; relHoldSince=0;
   });
   return {
-    init(){ size(); draw(performance.now()); },
-    resize(){ size(); draw(performance.now()); },
+    init(){ if (size()) draw(performance.now()); },
+    resize(){ if (size()) draw(performance.now()); },
     start(){ if (run || reduce) return; run = true; nextSend = performance.now(); requestAnimationFrame(loop); },
     stop(){ run = false; }
   };
@@ -1348,6 +1427,17 @@ addEventListener("keydown", e => {
 function repaint(){ drawContour(); bp.resize(); dt.resize(); tx.resize(); }
 let rt;
 addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(repaint, 160); });
+
+const stageOf = {bpCanvas:bp, dtCanvas:dt, txCanvas:tx};
+if (window.ResizeObserver){
+  const ro = new ResizeObserver(es => {
+    for (const e of es){
+      const c = e.target.querySelector("canvas");
+      if (c && stageOf[c.id]) stageOf[c.id].resize();
+    }
+  });
+  $$(".inst-stage").forEach(el => ro.observe(el));
+}
 
 drawContour();
 bp.init(); dt.init(); tx.init();
